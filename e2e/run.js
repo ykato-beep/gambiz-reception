@@ -91,6 +91,7 @@ async function settle(page, viewId, ms) {
     if (Number(getComputedStyle(document.getElementById('panel')).opacity) < 0.99) return false;
     return [...v.querySelectorAll('.in, .thanks, .msg, .note, .pair .btn, .who .ch, .who .q, .co')].filter(e => e.offsetParent !== null).every(e => Number(getComputedStyle(e).opacity) > 0.98);
   }, viewId, { timeout: ms || 12000 });
+  await page.evaluate(() => document.fonts && document.fonts.ready); // 書体の読み込みで行の高さが変わるのを待つ
   await page.waitForTimeout(250);
 }
 const audit = page => page.evaluate(auditInPage);

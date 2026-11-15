@@ -107,9 +107,10 @@
    *  33〜45fpsが3回 … 1段階下げて60fpsを狙う（30fps前後は省電力モードの上限とみなし、下げない）
    */
   function watch() {
-    var now = performance.now(), el = now - lastTick, fps = frames * 1000 / el;
+    var now = performance.now(), el = now - lastTick, n = frames, fps = n * 1000 / el;
     frames = 0; lastTick = now;
-    if (!running || document.hidden || now < cool || el < 700 || el > 1600) return; // 裏に回っている間や、タイマー自体が遅れたときは判定しない
+    // 1コマも描けていないのは「遅い」のではなく、ブラウザが描画を止めている状態（画面が隠れている等）なので判定しない
+    if (!running || document.hidden || n === 0 || now < cool || el < 700 || el > 1600) return; // 裏に回っている間や、タイマー自体が遅れたときは判定しない
     G.fps = Math.round(fps);
     var lastLevel = LEVELS.length - 1;
     if (fps < 18) { slowRuns = 0; midRuns = 0; if (G.level < lastLevel) setLevel(Math.min(lastLevel, G.level + 2), now); else if (++liteRuns >= 2) lite('slow'); }

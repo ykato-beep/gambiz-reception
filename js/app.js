@@ -276,7 +276,7 @@
         anim($(x[0]), [{ opacity: 0, transform: 'translateY(18px)', filter: 'blur(6px)', letterSpacing: '.3em' }, { opacity: 1, transform: 'none', filter: 'blur(0)', letterSpacing: x[0] === 'done-h' ? '.04em' : 'normal' }],
           { duration: 900, delay: x[1], easing: 'cubic-bezier(.2,.8,.2,1)' });
       });
-      if (!already && navigator.vibrate) { try { navigator.vibrate(30); } catch (e) { /* 対応していない端末 */ } }
+      if (!already && navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) { try { navigator.vibrate(30); } catch (e) { /* 対応していない端末 */ } }
     });
   }
 

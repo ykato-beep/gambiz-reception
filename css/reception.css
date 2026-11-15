@@ -107,7 +107,7 @@ input::placeholder { color: rgba(255, 255, 255, .28); letter-spacing: .04em; }
 .err { min-height: 20px; margin: 2px 0 10px; font: 600 13px/1.5 var(--ui); color: #ffb48a; }
 .err:empty { min-height: 8px; margin: 0 0 6px; }
 
-.btn { position: relative; display: block; width: 100%; min-height: 62px; border: 0; border-radius: 16px; cursor: pointer; overflow: hidden; font: 700 18.5px/1.2 var(--ui); letter-spacing: .14em; padding: 0 14px; touch-action: manipulation; transition: transform .16s, filter .2s, opacity .2s; }
+.btn { position: relative; display: block; width: 100%; min-height: 62px; border: 0; border-radius: 16px; cursor: pointer; overflow: hidden; font: 700 18.5px/1.2 var(--ui); letter-spacing: .14em; padding: 0 14px; touch-action: manipulation; transition: transform .16s, filter .2s; } /* opacity は遷移させない（登場アニメ終了時に WebKit で再フェードが起きるため） */
 .btn:active { transform: scale(.975); }
 .btn.gold { color: #1b1307; background: linear-gradient(180deg, #f3dca0 0%, var(--gold) 46%, #a8843f 100%); box-shadow: 0 10px 26px -8px rgba(201, 164, 92, .7), inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -2px 0 rgba(90, 60, 10, .35); }
 .btn.gold::before { content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 46%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .7), transparent); transform: skewX(-20deg); animation: sweep 3.6s ease-in-out infinite; }

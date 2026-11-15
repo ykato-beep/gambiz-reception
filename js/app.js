@@ -46,7 +46,7 @@
         if (b.action === 'lookup') {
           if (b.reading === 'えらー') return ok({ ok: false, code: 'NETWORK', message: '通信できませんでした。電波の良い場所で、もう一度お試しください。' });
           var hit = people[b.reading] || [];
-          return ok({ ok: true, found: hit.length > 0, candidates: hit.map(function (n, i) { var c = { name: n, token: b.reading + i }; if (hit[0] === hit[1]) c.company = i ? '株式会社ベータ' : '株式会社アルファ'; return c; }) });
+          return ok({ ok: true, found: hit.length > 0, candidates: hit.map(function (n, i) { return { name: n, token: b.reading + i, company: i ? '株式会社ベータ' : '株式会社アルファ' }; }) });
         }
         if (b.action === 'checkin') { var st = demoDone[b.token] ? 'already' : 'ok'; demoDone[b.token] = 1; return ok({ ok: true, status: st }); }
         if (b.action === 'register') return ok({ ok: true, status: 'ok' });
@@ -169,10 +169,13 @@
       who.appendChild(nm); who.appendChild(qs);
       $('who-co').textContent = c.company || '';
       $('e-confirm').textContent = '';
+      $('who-co').style.opacity = 0;
       $('yes').style.opacity = 0; $('no').style.opacity = 0;
     }, function () {
+      // 会社名・屋号 → フルネームの順に出す
+      anim($('who-co'), [{ opacity: 0, transform: 'translateY(14px)', letterSpacing: '.4em', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', letterSpacing: '.08em', filter: 'blur(0)' }], { duration: 700, delay: 120, easing: 'cubic-bezier(.2,.8,.2,1)' });
       // 名前を一文字ずつ、立ち上がるように出す
-      var chs = $('who').querySelectorAll('.ch'), i, base = 260;
+      var chs = $('who').querySelectorAll('.ch'), i, base = 460;
       for (i = 0; i < chs.length; i++) {
         anim(chs[i], [
           { opacity: 0, transform: 'translateY(46px) rotateX(-95deg) scale(1.5)', filter: 'blur(10px)', color: '#ffe3a0' },

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#090909">
+<meta name="format-detection" content="telephone=no">
+<title>Gambiz 受付</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700;1,800&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/pub-lite.jpg">
+<link rel="stylesheet" href="css/reception.css">
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="lite" aria-hidden="true"><i></i><i></i><i></i><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+<div class="veil" id="veil" aria-hidden="true"></div>
+<div class="mode" id="mode" hidden>TEST MODE</div>
+
+<main id="stage">
+  <div class="scene" id="scene">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="rings" id="rings" aria-hidden="true"><i></i><i></i><i></i></div>
+    <svg class="trace" id="trace" aria-hidden="true"><rect x="1" y="1" rx="23" ry="23" pathLength="1"/></svg>
+
+    <section class="panel" id="panel">
+      <span class="edge" aria-hidden="true"></span>
+      <span class="lap" id="lap" aria-hidden="true"></span>
+
+      <!-- STEP 1：お名前の入力 -->
+      <form class="view" id="v-name" novalidate autocomplete="off">
+        <h1 class="logo split in" aria-label="Gambiz"><span>G</span><span>a</span><span>m</span><span>b</span><span>i</span><span>z</span></h1>
+        <p class="eyebrow in">WELCOME TO GAMBIZ</p>
+        <div class="lead in">
+          <p>本日はご来場ありがとうございます。</p>
+          <p>受付のため、お名前を<br><strong>ひらがな</strong>で入力してください。</p>
+        </div>
+        <label class="field in" for="reading">
+          <span class="cap">おなまえ（フルネーム）</span>
+          <span class="box"><input id="reading" name="reading" type="text" lang="ja" placeholder="やまだたろう" maxlength="30"
+            autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-describedby="e-name"></span>
+        </label>
+        <p class="err" id="e-name" role="alert"></p>
+        <button class="btn gold in" type="submit"><span class="t">受付へ進む</span><span class="spin" aria-hidden="true"></span></button>
+      </form>
+
+      <!-- STEP 2：本人確認 -->
+      <div class="view" id="v-confirm" hidden>
+        <p class="eyebrow in">お名前の確認</p>
+        <h2 class="who" id="who" aria-live="polite"></h2>
+        <p class="sub in" id="who-co"></p>
+        <p class="err" id="e-confirm" role="alert"></p>
+        <div class="pair">
+          <button class="btn gold from-l" type="button" id="yes"><span class="t">そうです</span><span class="spin" aria-hidden="true"></span></button>
+          <button class="btn line from-r" type="button" id="no"><span class="t">ちがいます</span></button>
+        </div>
+      </div>
+
+      <!-- 候補が複数あるとき -->
+      <div class="view" id="v-choose" hidden>
+        <p class="eyebrow in">お名前の確認</p>
+        <h2 class="h in">ご自身のお名前を<br>お選びください</h2>
+        <div class="list" id="list"></div>
+        <button class="btn line in" type="button" id="none"><span class="t">この中にありません</span></button>
+      </div>
+
+      <!-- 見つからないとき -->
+      <div class="view" id="v-notfound" hidden>
+        <p class="eyebrow in">お名前の確認</p>
+        <h2 class="h in">お名前が<br>見つかりませんでした</h2>
+        <p class="sub in">入力されたお名前：<span id="typed"></span></p>
+        <div class="col">
+          <button class="btn gold in" type="button" id="retry"><span class="t">もう一度入力する</span></button>
+          <button class="btn line in" type="button" id="toreg"><span class="t">新しく参加登録する</span></button>
+        </div>
+      </div>
+
+      <!-- STEP 3-B：新規登録 -->
+      <form class="view" id="v-register" hidden novalidate>
+        <p class="eyebrow in">参加登録</p>
+        <h2 class="h small in">ご登録内容を入力してください</h2>
+        <label class="field in" for="r-name"><span class="cap">お名前<em>必須</em></span>
+          <span class="box"><input id="r-name" type="text" lang="ja" maxlength="40" autocomplete="name" placeholder="山田 太郎" enterkeyhint="next"></span></label>
+        <label class="field in" for="r-company"><span class="cap">会社名<em>必須</em></span>
+          <span class="box"><input id="r-company" type="text" lang="ja" maxlength="60" autocomplete="organization" placeholder="株式会社〇〇（個人の方は「個人」）" enterkeyhint="next"></span></label>
+        <label class="field in" for="r-email"><span class="cap">メールアドレス<em>必須</em></span>
+          <span class="box"><input id="r-email" type="email" inputmode="email" maxlength="120" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="name@example.com" enterkeyhint="done"></span></label>
+        <p class="err" id="e-register" role="alert"></p>
+        <button class="btn gold in" type="submit"><span class="t">参加登録する</span><span class="spin" aria-hidden="true"></span></button>
+        <button class="back in" type="button" id="back">お名前の入力に戻る</button>
+      </form>
+
+      <!-- 受付完了 -->
+      <div class="view done" id="v-done" hidden>
+        <div class="logo big" id="done-logo" aria-hidden="true">Gambiz</div>
+        <h2 class="thanks" id="done-h">ご来場ありがとうございます</h2>
+        <p class="msg" id="done-p">より多くの方と繋がって<br>いただければ幸いです。</p>
+        <p class="note" id="done-n">※画面は閉じて大丈夫です。</p>
+      </div>
+
+      <!-- 受付URLが無効・準備中 -->
+      <div class="view" id="v-invalid" hidden>
+        <div class="logo in" aria-hidden="true">Gambiz</div>
+        <h2 class="h small in" id="inv-h">受付を開始できません</h2>
+        <p class="sub in" id="inv-p">会場のQRコードをもう一度読み取ってください。解決しない場合は受付スタッフにお声がけください。</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<noscript><div class="nojs">受付には JavaScript が必要です。受付スタッフにお声がけください。</div></noscript>
+<script src="js/config.js"></script>
+<script src="js/bg.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

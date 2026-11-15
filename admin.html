@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Gambiz 受付管理</title>
+<style>
+:root { --bg: #0b0a09; --panel: #131110; --line: #2c261c; --gold: #C9A45C; --gold-hi: #f1dba3; --text: #f4f1ea; --mute: #a39b8c; --ok: #7fd4a0; --warn: #ffb48a; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif; }
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: inherit; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 16px 16px 60px; }
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 6px 0 16px; border-bottom: 1px solid var(--line); }
+.brand { font: italic 800 28px/1 "Playfair Display", Cambria, Georgia, serif; color: var(--gold); }
+.ev { flex: 1; min-width: 160px; color: var(--mute); font-size: 13px; }
+.ev b { display: block; color: var(--text); font-size: 15px; font-weight: 600; }
+.badge { font: 700 11px/1 inherit; letter-spacing: .12em; padding: 7px 10px; border-radius: 99px; background: var(--gold); color: #1a1206; }
+.badge.prod { background: #b3261e; color: #fff; }
+.live { font-size: 12px; color: var(--mute); display: flex; align-items: center; gap: 6px; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: blink 2s infinite; }
+.live.off i { background: var(--warn); box-shadow: none; animation: none; }
+@keyframes blink { 50% { opacity: .35; } }
+.btn { border: 1px solid var(--line); background: #1a1714; border-radius: 10px; padding: 9px 14px; cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--gold); }
+.btn.gold { background: linear-gradient(180deg, #ecd392, var(--gold)); color: #1a1206; border: 0; font-weight: 700; }
+.btn.small { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+.btn.danger { color: var(--warn); }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+.cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 18px 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 14px; position: relative; overflow: hidden; }
+.card.main { border-color: var(--gold); box-shadow: 0 0 34px -14px var(--gold); }
+.card h3 { margin: 0 0 6px; font: 600 12.5px/1.3 inherit; color: var(--mute); letter-spacing: .06em; }
+.num { font: 700 clamp(34px, 5vw, 52px)/1.05 "Helvetica Neue", Arial, sans-serif; font-variant-numeric: tabular-nums; color: var(--gold-hi); }
+.num small { font-size: .42em; color: var(--mute); font-weight: 500; margin-left: 3px; }
+.card.bump::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 40%, rgba(201, 164, 92, .35), transparent 60%); animation: bump 1.2s ease-out forwards; }
+@keyframes bump { from { opacity: 1; } to { opacity: 0; } }
+.bar { height: 6px; border-radius: 6px; background: #221d16; margin-top: 10px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8d6d33, var(--gold-hi)); transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+.tabs { display: flex; gap: 6px; margin: 6px 0 12px; flex-wrap: wrap; }
+.tab { padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line); background: none; cursor: pointer; color: var(--mute); }
+.tab.on { background: var(--gold); color: #1a1206; border-color: var(--gold); font-weight: 700; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+.tools input[type=search], .tools select, .form input, .form select { background: #0f0d0b; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-height: 40px; }
+.tools input[type=search] { flex: 1; min-width: 180px; }
+input:focus, select:focus, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; min-width: 760px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font: 600 12px/1.3 inherit; color: var(--mute); letter-spacing: .05em; position: sticky; top: 0; background: #171411; }
+tr:last-child td { border-bottom: 0; }
+td.name b { font-weight: 600; } td.name small { display: block; color: var(--mute); font-size: 12px; }
+.pill { display: inline-block; font-size: 12px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--mute); white-space: nowrap; }
+.pill.in { color: #0d2a19; background: var(--ok); border-color: var(--ok); font-weight: 700; }
+.pill.walk { color: var(--gold-hi); border-color: var(--gold); }
+.pill.warn { color: var(--warn); border-color: #6a3f2a; }
+tr.flash td { animation: rowflash 2.4s ease-out; }
+@keyframes rowflash { from { background: rgba(201, 164, 92, .32); } to { background: transparent; } }
+.muted { color: var(--mute); font-size: 13px; }
+.login { max-width: 380px; margin: 14vh auto 0; background: var(--panel); border: 1px solid var(--gold); border-radius: 20px; padding: 28px 24px; text-align: center; }
+.login input { width: 100%; background: #0a0908; border: 1px solid var(--line); border-radius: 12px; padding: 13px; margin: 14px 0 10px; text-align: center; font-size: 17px; }
+.login .btn { width: 100%; padding: 13px; }
+.msg { min-height: 22px; color: var(--warn); font-size: 13.5px; margin: 6px 0 0; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.box h2 { margin: 0 0 10px; font-size: 16px; color: var(--gold-hi); }
+.form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.url { word-break: break-all; font: 13px/1.5 ui-monospace, Consolas, monospace; background: #0a0908; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+.toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #1d1915; border: 1px solid var(--gold); border-radius: 12px; padding: 11px 18px; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); z-index: 9; max-width: 92vw; }
+@media (max-width: 860px) { .cards { grid-template-columns: repeat(2, 1fr); } .card.main { grid-column: span 2; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form class="login" id="login" hidden>
+    <div class="brand">Gambiz</div>
+    <p class="muted">受付管理（管理者専用）</p>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="管理者パスワード" aria-label="管理者パスワード">
+    <button class="btn gold" type="submit">ログイン</button>
+    <p class="msg" id="login-msg" role="alert"></p>
+  </form>
+
+  <div id="app" hidden>
+    <header>
+      <div class="brand">Gambiz</div>
+      <div class="ev"><b id="ev-name">—</b><span id="ev-date"></span></div>
+      <span class="badge" id="mode">TEST MODE</span>
+      <span class="live" id="live"><i></i><span id="live-t">更新中</span></span>
+      <button class="btn small" id="logout" type="button">ログアウト</button>
+    </header>
+
+    <section class="cards" aria-live="polite">
+      <div class="card main" id="c-in"><h3>受付完了人数</h3><div class="num"><span data-n="checkedIn">0</span><small>名</small></div></div>
+      <div class="card" id="c-plan"><h3>来場予定人数（事前登録）</h3><div class="num"><span data-n="planned">0</span><small>名</small></div></div>
+      <div class="card" id="c-not"><h3>未受付人数</h3><div class="num"><span data-n="notYet">0</span><small>名</small></div></div>
+      <div class="card" id="c-walk"><h3>当日追加登録人数</h3><div class="num"><span data-n="walkIn">0</span><small>名</small></div></div>
+      <div class="card" id="c-rate"><h3>受付率（事前登録者のうち）</h3><div class="num"><span data-n="rate" data-dec="1">0</span><small>%</small></div><div class="bar"><i id="ratebar"></i></div></div>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab on" data-tab="list" type="button">参加者一覧</button>
+      <button class="tab" data-tab="history" type="button">受付履歴・操作履歴</button>
+      <button class="tab" data-tab="settings" type="button">設定・QRコード</button>
+    </nav>
+
+    <section id="t-list">
+      <div class="tools">
+        <input type="search" id="q" placeholder="氏名・読み・会社名で検索" aria-label="検索">
+        <select id="f" aria-label="出欠で絞り込み"><option value="all">すべて</option><option value="in">受付済み</option><option value="out">未受付</option><option value="walk">当日追加登録</option><option value="read">読み仮名が未確認</option></select>
+        <select id="s" aria-label="並び順"><option value="time">受付が新しい順</option><option value="timeasc">受付が早い順</option><option value="name">読み順</option></select>
+        <button class="btn" id="resync" type="button">スプレッドシートと再同期</button>
+        <button class="btn" id="csv" type="button">CSV出力</button>
+      </div>
+      <p class="muted" id="count"></p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>お名前</th><th>会社名</th><th>メールアドレス</th><th>出席状況</th><th>受付日時</th><th>区分</th><th>操作</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </section>
+
+    <section id="t-history" hidden>
+      <div class="tools"><button class="btn" id="reload-h" type="button">履歴を更新</button><span class="muted">変更操作はすべて記録されます（スプレッドシートの「操作履歴」「受付記録」タブと同じ内容）。</span></div>
+      <div class="box"><h2>受付履歴（このイベント）</h2><div class="tablewrap"><table><thead><tr><th>受付日時</th><th>お名前</th><th>会社名</th><th>区分</th><th>方法</th><th>状態</th></tr></thead><tbody id="h-rec"></tbody></table></div></div>
+      <div class="box"><h2>操作履歴</h2><div class="tablewrap"><table><thead><tr><th>日時</th><th>操作者</th><th>操作</th><th>対象</th><th>詳細</th></tr></thead><tbody id="h-log"></tbody></table></div></div>
+    </section>
+
+    <section id="t-settings" hidden>
+      <div class="box"><h2>参加者用の受付URL（QRコードの中身）</h2><div class="url" id="rurl"></div>
+        <div class="form"><button class="btn small" id="copy" type="button">URLをコピー</button><a class="btn small" id="qr" href="qr.png" download="gambiz-reception-qr.png">QRコード画像（PNG）</a></div>
+        <p class="muted">受付キーはイベントごとに別です。イベントを切り替えると、前のイベントのQRコードでは受付できなくなります。</p></div>
+      <div class="box"><h2>イベント</h2><div class="tablewrap"><table style="min-width:520px"><thead><tr><th>イベント名</th><th>開催日</th><th>参加者タブ</th><th>状態</th><th></th></tr></thead><tbody id="evs"></tbody></table></div>
+        <p class="muted" style="margin:12px 0 6px">新しいイベントを追加（参加者タブは、同じスプレッドシート内の申込一覧のタブ名。C列=お名前、O列=出欠）</p>
+        <form class="form" id="newev"><input id="ne-name" placeholder="イベント名" required><input id="ne-date" type="date" required><input id="ne-tab" placeholder="参加者タブ名" required><button class="btn" type="submit">追加</button></form></div>
+      <div class="box"><h2>動作モード</h2><p id="mode-desc" class="muted"></p>
+        <form class="form" id="modeform"><input id="mo-pw" type="password" placeholder="管理者パスワード" autocomplete="current-password"><input id="mo-ph" placeholder="確認のため「本番に切り替えます」と入力"><button class="btn danger" type="submit" id="mo-btn">本番モードへ切り替える</button></form></div>
+      <div class="box"><h2>パスワードの変更</h2>
+        <form class="form" id="pwform"><input id="pw-old" type="password" placeholder="現在のパスワード" autocomplete="current-password"><input id="pw-new" type="password" placeholder="新しいパスワード（10文字以上）" autocomplete="new-password"><button class="btn" type="submit">変更する</button></form></div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+<script src="js/config.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

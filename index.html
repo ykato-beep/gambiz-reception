@@ -25,6 +25,8 @@
     <div class="rings" id="rings" aria-hidden="true"><i></i><i></i><i></i></div>
     <svg class="trace" id="trace" aria-hidden="true"><rect x="1" y="1" rx="23" ry="23" pathLength="1"/></svg>
 
+    <div class="wait" id="wait" role="status" aria-live="polite"><i aria-hidden="true"></i><span id="wait-t"></span></div>
+
     <section class="panel" id="panel">
       <span class="edge" aria-hidden="true"></span>
       <span class="lap" id="lap" aria-hidden="true"></span>
@@ -84,7 +86,7 @@
         <label class="field in" for="r-name"><span class="cap">お名前<em>必須</em></span>
           <span class="box"><input id="r-name" type="text" lang="ja" maxlength="40" autocomplete="name" placeholder="山田 太郎" enterkeyhint="next"></span></label>
         <label class="field in" for="r-company"><span class="cap">会社名<em>必須</em></span>
-          <span class="box"><input id="r-company" type="text" lang="ja" maxlength="60" autocomplete="organization" placeholder="株式会社〇〇（個人の方は「個人」）" enterkeyhint="next"></span></label>
+          <span class="box"><input id="r-company" type="text" lang="ja" maxlength="60" autocomplete="organization" placeholder="株式会社〇〇／個人" enterkeyhint="next"></span></label>
         <label class="field in" for="r-email"><span class="cap">メールアドレス<em>必須</em></span>
           <span class="box"><input id="r-email" type="email" inputmode="email" maxlength="120" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="name@example.com" enterkeyhint="done"></span></label>
         <p class="err" id="e-register" role="alert"></p>

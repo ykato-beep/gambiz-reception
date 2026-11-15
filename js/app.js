@@ -100,20 +100,37 @@
     current = id;
   }
 
-  /** パネルを奥へ送り、次のパネルを手前から出す */
-  function go(id, prep, after) {
+  /**
+   * パネルを奥へ送る。通信を伴う操作では、送信と同時に呼ぶ（応答を待つあいだに退場を済ませ、待ち時間を縮める）。
+   * 退場後、応答がまだなら「照合しています…」などの待機表示を出す。
+   */
+  var leaving = null;
+  function leave(waitText) {
+    if (leaving) return leaving;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     BG.centerOn(panel); BG.pulse('burst', .7, 1300); BG.hold(1400);
-    return anim(panel, [{ transform: 'translateZ(0) rotateX(0)', opacity: 1, filter: 'blur(0)' }, { transform: 'translateZ(-560px) rotateX(16deg) translateY(-30px)', opacity: 0, filter: 'blur(5px)' }],
-      { duration: 400, easing: 'cubic-bezier(.5,0,.85,.35)' }).then(function () {
+    $('wait-t').textContent = waitText || '';
+    $('wait').classList.toggle('on', !!waitText);
+    leaving = anim(panel, [{ transform: 'translateZ(0) rotateX(0)', opacity: 1, filter: 'blur(0)' }, { transform: 'translateZ(-560px) rotateX(16deg) translateY(-30px)', opacity: 0, filter: 'blur(5px)' }],
+      { duration: 380, easing: 'cubic-bezier(.5,0,.85,.35)' }).then(function () { panel.style.pointerEvents = 'none'; });
+    return leaving;
+  }
+
+  /** 次のパネルを手前から出す（まだ退場していなければ先に退場させる） */
+  function go(id, prep, after) {
+    return leave().then(function () {
+      leaving = null;
+      $('wait').classList.remove('on');
+      panel.style.pointerEvents = '';
       show(id);
       if (prep) prep();
       $('stage').scrollTop = 0;
       lap();
       var d = stagger($(id), 160);
       var p = anim(panel, [{ transform: 'translateZ(320px) rotateX(-12deg) scale(1.06)', opacity: 0, filter: 'blur(8px)' }, { transform: 'none', opacity: 1, filter: 'blur(0)' }],
-        { duration: 620, easing: 'cubic-bezier(.14,.9,.26,1)' });
+        { duration: 560, easing: 'cubic-bezier(.14,.9,.26,1)' });
       if (after) after(d);
+      html.dataset.view = id; html.dataset.shownAt = String(Math.round(performance.now()));
       return p;
     });
   }
@@ -129,7 +146,7 @@
     if (!/^[ぁ-ゖー]{2,24}$/.test(n)) { $('e-name').textContent = 'ひらがなで入力してください（例：やまだたろう）'; shake(input.parentNode); return; }
     typedReading = n;
     ripple(btn, e.submitter ? null : null);
-    setBusy(btn, true);
+    setBusy(btn, true); leave('お名前を照合しています…');
     post({ action: 'lookup', reading: n }, 1).then(function (r) {
       setBusy(btn, false);
       if (!r.ok) return fail(r, 'e-name');
@@ -152,7 +169,8 @@
   function shake(el) { anim(el, [{ transform: 'translateX(0)' }, { transform: 'translateX(-7px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(0)' }], { duration: 320 }); }
   function fail(r, errId) {
     if (r.code === 'BAD_KEY' || r.code === 'NO_EVENT' || r.code === 'CONFIG') return invalid(r.message);
-    $(errId).textContent = r.message || 'エラーが発生しました。もう一度お試しください。';
+    // 元の画面へ戻して、エラーの内容を表示する
+    go(current, function () { $(errId).textContent = r.message || 'エラーが発生しました。もう一度お試しください。'; });
   }
   function invalid(msg) {
     go('v-invalid', function () { if (msg) $('inv-p').textContent = msg + ' 解決しない場合は受付スタッフにお声がけください。'; });
@@ -193,7 +211,7 @@
   $('yes').addEventListener('click', function (ev) {
     if (busy || !chosen) return;
     var btn = this;
-    ripple(btn, ev); setBusy(btn, true); $('no').disabled = true; $('e-confirm').textContent = '';
+    ripple(btn, ev); setBusy(btn, true); $('no').disabled = true; $('e-confirm').textContent = ''; leave('受付しています…');
     post({ action: 'checkin', token: chosen.token, rid: rid }, 2).then(function (r) {
       setBusy(btn, false); $('no').disabled = false;
       if (!r.ok) {
@@ -220,7 +238,7 @@
     if (name.length < 2) { err.textContent = 'お名前を入力してください。'; shake($('r-name').parentNode); return; }
     if (!company) { err.textContent = '会社名を入力してください。'; shake($('r-company').parentNode); return; }
     if (!/^[a-z0-9._%+\-]+@[a-z0-9\-]+(\.[a-z0-9\-]+)+$/.test(email)) { err.textContent = 'メールアドレスの形式をご確認ください。'; shake($('r-email').parentNode); return; }
-    ripple(btn); setBusy(btn, true);
+    ripple(btn); setBusy(btn, true); leave('登録しています…');
     post({ action: 'register', name: name, company: company, email: email, reading: typedReading, rid: rid }, 2).then(function (r) {
       setBusy(btn, false);
       if (!r.ok) return fail(r, 'e-register');
@@ -314,7 +332,7 @@
       return;
     }
     BG.centerOn(scene);
-    BG.hold(3200); BG.tween('intro', 0, 2600, 'out', 1);              // 背景が大きくズームしながら現れる
+    BG.tween('intro', 0, 2600, 'out', 1);              // 背景が大きくズームしながら現れる
     setTimeout(function () {                            // 金の光が中央へ集まり、輪郭を描く
       BG.centerOn(scene);
       BG.tween('gather', 1, 800, 'inOut', 0);
@@ -323,6 +341,7 @@
       anim(tr.querySelector('rect'), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1050, easing: 'cubic-bezier(.5,0,.2,1)' });
     }, 450);
     setTimeout(function () {                            // 黒いパネルが立体的に現れる
+      BG.hold(1500); // パネルの登場中は DOM 側の負荷が混ざるので、描画負荷の判定を休む
       BG.tween('gather', 0, 900, 'out'); BG.pulse('flash', .5, 900); BG.pulse('burst', .5, 1400);
       anim(panel, [{ opacity: 0, transform: 'translateZ(-420px) rotateX(38deg) scale(.86)', filter: 'blur(10px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }],
         { duration: 900, easing: 'cubic-bezier(.14,.9,.24,1)' });

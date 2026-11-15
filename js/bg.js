@@ -9,14 +9,13 @@
 
   var VERT = 'attribute vec2 aP;varying vec2 vUv;void main(){vUv=aP*.5+.5;gl_Position=vec4(aP,0.,1.);}';
 
-  function frag(oct, hp) {
+  function frag(hp) {
     return [
       'precision ' + (hp ? 'highp' : 'mediump') + ' float;',
-      '#define OCT ' + oct,
-      'uniform sampler2D uTex,uDepth;uniform vec2 uRes,uPar,uC;uniform float uAsp,uT,uIntro,uEnergy,uFocus,uFlash,uRip;varying vec2 vUv;',
+      'uniform sampler2D uTex,uDepth;uniform vec2 uRes,uPar,uC;uniform float uAsp,uT,uIntro,uEnergy,uFocus,uFlash,uRip,uOct;varying vec2 vUv;',
       'float hash(vec2 p){p=fract(p*vec2(.1031,.1030));p+=dot(p,p.yx+33.33);return fract((p.x+p.y)*p.x);}',
       'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}',
-      'float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<OCT;i++){s+=a*noise(p);p=p*2.03+vec2(17.,9.);a*=.5;}return s;}',
+      'float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){if(float(i)>=uOct)break;s+=a*noise(p);p=p*2.03+vec2(17.,9.);a*=.5;}return s;}',
       'vec2 fl(vec2 u){return vec2(u.x,1.-u.y);}',
       'float lamp(vec2 iu,vec2 L,float size,float seed){vec2 q=(iu-L)*vec2(uAsp,1.);float f=.72+.28*noise(vec2(uT*1.9+seed*13.,seed*5.));f*=.9+.1*sin(uT*.6+seed*4.);return f*size*size/(dot(q,q)+size*size);}',
       'void main(){',
@@ -100,7 +99,8 @@
     center: [0.5, 0.5], par: [0, 0], parT: [0, 0]
   };
   var canvas, gl, prog, pprog, quad, pbuf, texA, texD, loc = {}, ploc = {}, hp = true;
-  var slowRuns = 0;
+  var slowRuns = 0, winStart = 0;
+  function setLevel(n, now) { G.level = n; resize(); cool = now + 500; onTier('gl', 'level ' + G.level); }
   var running = false, raf = 0, last = 0, t0 = 0, acc = [], cool = 0, tweens = [];
   var onTier = function () {};
 
@@ -120,8 +120,8 @@
   function build() {
     var L = LEVELS[G.level];
     if (prog) gl.deleteProgram(prog);
-    prog = link(VERT, frag(L.oct, hp));
-    ['uTex', 'uDepth', 'uRes', 'uPar', 'uC', 'uAsp', 'uT', 'uIntro', 'uEnergy', 'uFocus', 'uFlash', 'uRip'].forEach(function (n) { loc[n] = gl.getUniformLocation(prog, n); });
+    prog = link(VERT, frag(hp));
+    ['uTex', 'uDepth', 'uRes', 'uPar', 'uC', 'uAsp', 'uT', 'uIntro', 'uEnergy', 'uFocus', 'uFlash', 'uRip', 'uOct'].forEach(function (n) { loc[n] = gl.getUniformLocation(prog, n); });
     loc.aP = gl.getAttribLocation(prog, 'aP');
     resize();
   }
@@ -178,7 +178,7 @@
     gl.uniform2f(loc.uRes, canvas.width, canvas.height);
     gl.uniform2f(loc.uPar, G.par[0], G.par[1]);
     gl.uniform2f(loc.uC, G.center[0], G.center[1]);
-    gl.uniform1f(loc.uAsp, G.asp); gl.uniform1f(loc.uT, T);
+    gl.uniform1f(loc.uAsp, G.asp); gl.uniform1f(loc.uT, T); gl.uniform1f(loc.uOct, L.oct);
     gl.uniform1f(loc.uIntro, v.intro); gl.uniform1f(loc.uEnergy, v.energy); gl.uniform1f(loc.uFocus, v.focus);
     gl.uniform1f(loc.uFlash, v.flash); gl.uniform1f(loc.uRip, v.rip);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -192,19 +192,18 @@
     gl.uniform2f(ploc.uC, G.center[0], G.center[1]); gl.uniform2f(ploc.uPar, G.par[0], G.par[1]);
     gl.drawArrays(gl.POINTS, 0, L.n);
 
-    // 描画負荷の監視：遅ければ段階的に品質を下げる
-    if (now < cool) return;
+    // 描画負荷の監視：約1秒ごとに判定し、遅ければ品質を下げる（シェーダーは作り直さないので切替で固まらない）
+    if (now < cool) { acc = []; winStart = now; return; }
     acc.push(dt);
-    if (acc.length >= 40) {
+    if (now - winStart >= 900 && acc.length >= 5) {
       acc.sort(function (a, b) { return a - b; });
-      var med = acc[20]; acc = [];
+      var med = acc[Math.floor(acc.length / 2)]; acc = []; winStart = now;
       G.fps = Math.round(1000 / med);
-      slowRuns = med > 25 ? slowRuns + 1 : 0;
-      if (slowRuns >= 2) {
-        slowRuns = 0;
-        if (G.level < LEVELS.length - 1) { G.level++; try { build(); } catch (e) { return lite('shader'); } cool = now + 900; onTier('gl', 'level ' + G.level); }
-        else if (med > 42) lite('slow');
-      }
+      var lastLevel = LEVELS.length - 1;
+      if (med > 50 && G.level < lastLevel) { setLevel(Math.min(lastLevel, G.level + 2), now); slowRuns = 0; }       // 20fps未満：すぐに2段階下げる
+      else if (med > 25) {                                                                                            // 40fps未満が2回続いたら1段階下げる
+        if (++slowRuns >= 2) { slowRuns = 0; if (G.level < lastLevel) setLevel(G.level + 1, now); else if (med > 40) lite('slow'); }
+      } else slowRuns = 0;
     }
   }
 
@@ -230,7 +229,7 @@
     G.center = [(r.left + r.width / 2) / window.innerWidth, 1 - (r.top + r.height / 2) / window.innerHeight];
   };
   G.pause = function () { running = false; cancelAnimationFrame(raf); };
-  G.resume = function () { if (G.tier === 'gl' && !running) { running = true; last = performance.now(); acc = []; cool = last + 500; raf = requestAnimationFrame(frame); } };
+  G.resume = function () { if (G.tier === 'gl' && !running) { running = true; last = performance.now(); acc = []; cool = last + 250; raf = requestAnimationFrame(frame); } };
 
   /**
    * opts: {canvas, image, imageLite, depth, onTier}

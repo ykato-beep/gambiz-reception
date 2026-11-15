@@ -1,0 +1,36 @@
+name: e2e (WebKit / Chromium)
+# 受付画面の自動ブラウザテスト。通信なしの見本モードだけを使い、API やスプレッドシートには接続しない。
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['index.html', 'css/**', 'js/**', 'e2e/**', '.github/workflows/e2e.yml']
+permissions:
+  contents: read
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm init -y >/dev/null
+          npm install playwright@1.65.1
+          npx playwright install --with-deps webkit chromium
+      - name: Run tests
+        run: NODE_PATH=e2e/node_modules node e2e/run.js webkit chromium
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-${{ matrix.os }}
+          path: e2e/out
+          retention-days: 14

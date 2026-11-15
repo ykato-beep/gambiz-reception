@@ -92,6 +92,8 @@
     draw(fresh);
     var u = new URL('./', location.href); u.search = '?k=' + encodeURIComponent(r.event.key);
     $('rurl').textContent = u.href;
+    if (r.popKey) { var pu = new URL('./', location.href); pu.search = '?k=' + encodeURIComponent(r.popKey); $('purl').textContent = pu.href; }
+    $('pissue').hidden = !!r.popKey; $('pcopy').hidden = !r.popKey;
     $('mode-desc').textContent = r.mode === 'PROD' ? '現在：本番モード（本番のスプレッドシートに接続中）'
       : 'TESTモード（ダミーのスプレッドシートに接続中）。本番の接続先は' + (r.prodReady ? '設定済みです。' : '未設定のため、本番モードには切り替えられません。');
     $('mo-btn').textContent = r.mode === 'PROD' ? 'TESTモードへ戻す' : '本番モードへ切り替える';
@@ -242,6 +244,13 @@
       $('pw-old').value = ''; $('pw-new').value = '';
       if (r.ok) logout('パスワードを変更しました。新しいパスワードでログインしてください。'); else toast(r.message);
     });
+  });
+  $('pissue').addEventListener('click', function () {
+    call({ action: 'popKey' }).then(function (r) { if (r.ok) { toast('常設の受付URLを発行しました。'); poll(); } else toast(r.message); });
+  });
+  $('pcopy').addEventListener('click', function () {
+    var t = $('purl').textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('常設の受付URLをコピーしました。'); }, function () { toast('コピーできませんでした。URLを選択してコピーしてください。'); });
   });
   $('copy').addEventListener('click', function () {
     var t = $('rurl').textContent;

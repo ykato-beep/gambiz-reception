@@ -63,10 +63,12 @@
 
   /* ---------- 演出の部品 ---------- */
   function anim(el, frames, opt) {
-    if (reduce || !el.animate) { var last = frames[frames.length - 1]; for (var k in last) if (k !== 'offset' && k !== 'easing') el.style[k] = last[k]; return Promise.resolve(); }
+    var settle = function () { var last = frames[frames.length - 1]; for (var k in last) if (k !== 'offset' && k !== 'easing') el.style[k] = (k === 'filter' && last[k] === 'blur(0)') ? 'none' : last[k]; };
+    if (reduce || !el.animate) { settle(); return Promise.resolve(); }
     opt.fill = opt.fill || 'both';
-    var a = el.animate(frames, opt);
-    var end = function () { if (a.playState === 'idle') return; try { a.finish(); a.commitStyles(); } catch (e) { /* 表示されていない要素 */ } a.cancel(); };
+    var a = el.animate(frames, opt), ended = false;
+    // 終了時は最終の見た目を要素に直接書き込んでから、アニメーションを外す（ブラウザごとの差が出ない方法）
+    var end = function () { if (ended) return; ended = true; settle(); try { a.cancel(); } catch (e) { /* 既に外れている */ } };
     // 画面が裏に回るなどして演出が止まっても、受付の進行は止めない（予定時間＋0.4秒で必ず先へ進む）
     return Promise.race([a.finished, new Promise(function (ok) { setTimeout(ok, (opt.duration || 0) + (opt.delay || 0) + 400); })]).then(end, end);
   }
@@ -204,8 +206,8 @@
       var t = base + chs.length * 95 + 260;
       anim($('who').querySelector('.q'), [{ opacity: 0, letterSpacing: '.6em', filter: 'blur(6px)' }, { opacity: 1, letterSpacing: '.1em', filter: 'blur(0)' }], { duration: 700, delay: t, easing: 'ease-out' });
       setTimeout(function () { BG.centerOn($('who')); BG.pulse('flash', .3, 900); }, t);
-      anim($('yes'), [{ opacity: 0, transform: 'translateX(-70px) rotateY(55deg) translateZ(-80px)' }, { opacity: 1, transform: 'none' }], { duration: 640, delay: t + 240, easing: 'cubic-bezier(.16,.9,.3,1)' });
-      anim($('no'), [{ opacity: 0, transform: 'translateX(70px) rotateY(-55deg) translateZ(-80px)' }, { opacity: 1, transform: 'none' }], { duration: 640, delay: t + 340, easing: 'cubic-bezier(.16,.9,.3,1)' });
+      anim($('yes'), [{ opacity: 0, transform: 'translateX(-70px) rotateY(55deg) translateZ(-80px)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 420, easing: 'cubic-bezier(.16,.9,.3,1)' }); // 名前の演出を待たずに押せるよう、ボタンは早めに出す
+      anim($('no'), [{ opacity: 0, transform: 'translateX(70px) rotateY(-55deg) translateZ(-80px)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 500, easing: 'cubic-bezier(.16,.9,.3,1)' });
     });
   }
   $('yes').addEventListener('click', function (ev) {

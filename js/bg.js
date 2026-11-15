@@ -99,7 +99,24 @@
     center: [0.5, 0.5], par: [0, 0], parT: [0, 0]
   };
   var canvas, gl, prog, pprog, quad, pbuf, texA, texD, loc = {}, ploc = {}, hp = true;
-  var slowRuns = 0, winStart = 0;
+  var slowRuns = 0, liteRuns = 0, midRuns = 0, frames = 0, lastTick = 0;
+  /**
+   * 描画負荷の監視。1秒ごとに実際に描けたコマ数を数え、遅ければ品質を下げる（シェーダーは作り直さないので切替で固まらない）。
+   *  18fps未満 … すぐ2段階下げる。最軽量でも続けば静止画の軽量表示へ
+   *  27fps未満が2回 … 1段階下げる。最軽量で22fps未満なら軽量表示へ
+   *  33〜45fpsが3回 … 1段階下げて60fpsを狙う（30fps前後は省電力モードの上限とみなし、下げない）
+   */
+  function watch() {
+    var now = performance.now(), el = now - lastTick, fps = frames * 1000 / el;
+    frames = 0; lastTick = now;
+    if (!running || document.hidden || now < cool || el < 700 || el > 1600) return; // 裏に回っている間や、タイマー自体が遅れたときは判定しない
+    G.fps = Math.round(fps);
+    var lastLevel = LEVELS.length - 1;
+    if (fps < 18) { slowRuns = 0; midRuns = 0; if (G.level < lastLevel) setLevel(Math.min(lastLevel, G.level + 2), now); else if (++liteRuns >= 2) lite('slow'); }
+    else if (fps < 27) { liteRuns = 0; midRuns = 0; if (++slowRuns >= 2) { slowRuns = 0; if (G.level < lastLevel) setLevel(G.level + 1, now); else if (fps < 22) lite('slow'); } }
+    else if (fps > 33 && fps < 45) { slowRuns = 0; liteRuns = 0; if (++midRuns >= 3) { midRuns = 0; if (G.level < lastLevel) setLevel(G.level + 1, now); } }
+    else { slowRuns = 0; liteRuns = 0; midRuns = 0; }
+  }
   function setLevel(n, now) { G.level = n; resize(); cool = now + 500; onTier('gl', 'level ' + G.level); }
   var running = false, raf = 0, last = 0, t0 = 0, acc = [], cool = 0, tweens = [];
   var onTier = function () {};
@@ -192,19 +209,7 @@
     gl.uniform2f(ploc.uC, G.center[0], G.center[1]); gl.uniform2f(ploc.uPar, G.par[0], G.par[1]);
     gl.drawArrays(gl.POINTS, 0, L.n);
 
-    // 描画負荷の監視：約1秒ごとに判定し、遅ければ品質を下げる（シェーダーは作り直さないので切替で固まらない）
-    if (now < cool) { acc = []; winStart = now; return; }
-    acc.push(dt);
-    if (now - winStart >= 900 && acc.length >= 5) {
-      acc.sort(function (a, b) { return a - b; });
-      var med = acc[Math.floor(acc.length / 2)]; acc = []; winStart = now;
-      G.fps = Math.round(1000 / med);
-      var lastLevel = LEVELS.length - 1;
-      if (med > 50 && G.level < lastLevel) { setLevel(Math.min(lastLevel, G.level + 2), now); slowRuns = 0; }       // 20fps未満：すぐに2段階下げる
-      else if (med > 25) {                                                                                            // 40fps未満が2回続いたら1段階下げる
-        if (++slowRuns >= 2) { slowRuns = 0; if (G.level < lastLevel) setLevel(G.level + 1, now); else if (med > 40) lite('slow'); }
-      } else slowRuns = 0;
-    }
+    frames++; // 描画負荷の判定は watch()（1秒ごとのタイマー）が行う
   }
 
   var ease = {
@@ -219,7 +224,7 @@
     tweens.push({ key: key, from: from == null ? G.v[key] : from, to: to, ms: ms, ease: ease[e || 'out'], t0: performance.now() });
   };
   /** 画面遷移など DOM 側が重い間は、描画負荷の判定を休む */
-  G.hold = function (ms) { cool = Math.max(cool, performance.now() + ms); acc = []; };
+  G.hold = function (ms) { cool = Math.max(cool, performance.now() + ms); };
   G.set = function (key, val) { G.target[key] = val; };
   G.pulse = function (key, peak, ms) { G.tween(key, 0, ms, 'out', peak); };
   /** 画面上の要素の中心を、光・波紋・粒子の中心にする */
@@ -282,6 +287,7 @@
         G.parT = [Math.max(-1, Math.min(1, e.gamma / 25)), Math.max(-1, Math.min(1, (e.beta - 45) / 25))];
       }, { passive: true });
       G.resume(); onTier('gl', 'level ' + G.level);
+      lastTick = performance.now(); setInterval(watch, 1000);
       // 高精細な写真は後から差し替える
       loadImg(opts.image).then(function (img) {
         if (G.tier !== 'gl') return;

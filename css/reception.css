@@ -33,7 +33,9 @@ html, body { height: 100%; margin: 0; background: #060403; color: var(--white); 
 .mode { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 5; font: 700 10px/1 var(--ui); letter-spacing: .14em; color: #1a1206; background: var(--gold); padding: 5px 8px; border-radius: 99px; opacity: .92; }
 
 /* ---------- 舞台とパネル ---------- */
-#stage { position: fixed; left: 0; top: 0; width: 100%; height: var(--vvh); overflow-y: auto; overflow-x: hidden; overflow-x: clip; display: flex; flex-direction: column; padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); perspective: 1100px; -webkit-overflow-scrolling: touch; }
+#stage { position: fixed; left: 0; top: 0; width: 100%; height: var(--vvh); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+/* 発光や波紋の飾りは .wrap の外へ出ないよう切り取る（画面が横へずれるのを防ぐ）。高さは中身に合わせて伸びる */
+.wrap { min-height: 100%; display: flex; flex-direction: column; overflow: hidden; overflow: clip; perspective: 1100px; padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
 /* margin:auto で中央に置く。中身が画面より高いときは上端から始まり、上が切れずにスクロールできる */
 .scene { position: relative; flex: none; margin: auto; width: min(100%, 430px); transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2, .7, .2, 1); }
 .glow { position: absolute; inset: -22% -16%; background: radial-gradient(closest-side, rgba(201, 164, 92, .38), rgba(201, 120, 40, .12) 55%, transparent 72%); transform: translateZ(-60px); animation: glow 5.5s ease-in-out infinite; pointer-events: none; opacity: 0; transition: opacity 1.2s; }

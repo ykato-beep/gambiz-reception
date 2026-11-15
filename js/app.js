@@ -66,7 +66,9 @@
     if (reduce || !el.animate) { var last = frames[frames.length - 1]; for (var k in last) if (k !== 'offset' && k !== 'easing') el.style[k] = last[k]; return Promise.resolve(); }
     opt.fill = opt.fill || 'both';
     var a = el.animate(frames, opt);
-    return a.finished.then(function () { try { a.commitStyles(); } catch (e) { /* 表示されていない要素 */ } a.cancel(); }).catch(function () {});
+    var end = function () { if (a.playState === 'idle') return; try { a.finish(); a.commitStyles(); } catch (e) { /* 表示されていない要素 */ } a.cancel(); };
+    // 画面が裏に回るなどして演出が止まっても、受付の進行は止めない（予定時間＋0.4秒で必ず先へ進む）
+    return Promise.race([a.finished, new Promise(function (ok) { setTimeout(ok, (opt.duration || 0) + (opt.delay || 0) + 400); })]).then(end, end);
   }
   function stagger(view, base) {
     var list = view.querySelectorAll('.in'), i;

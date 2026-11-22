@@ -133,8 +133,8 @@ async function layoutRun(browser, engine, dev, landscape, base, shots) {
     await check('v-register'); await shot('5-register');
     await page.goto(base + '/?demo=1'); await settle(page, 'v-name');
     await submitName(page, 'だれでもない');
-    await check('v-notfound');
-    await page.click('#retry');
+    await check('v-register'); // 似た候補が無いときは、手入力の登録フォームが開く
+    await page.click('#back');
     const a1 = await check('v-name');
     if (Math.abs(a1.panel[1] - a0.panel[1]) > 2 || Math.abs(a1.panel[3] - a0.panel[3]) > 2) r.problems.push('入力画面へ戻ったときの配置が最初と違う');
     await page.goto(base + '/'); // 受付キーなし → 無効表示（通信しない）

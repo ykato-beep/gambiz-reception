@@ -64,26 +64,17 @@
       <!-- 候補が複数あるとき -->
       <div class="view" id="v-choose" hidden>
         <p class="eyebrow in">お名前の確認</p>
-        <h2 class="h in">ご自身のお名前を<br>お選びください</h2>
+        <h2 class="h in" id="choose-h">ご自身のお名前を<br>お選びください</h2>
+        <p class="sub in" id="choose-sub"></p>
         <div class="list" id="list"></div>
         <button class="btn line in" type="button" id="none"><span class="t">この中にありません</span></button>
-      </div>
-
-      <!-- 見つからないとき -->
-      <div class="view" id="v-notfound" hidden>
-        <p class="eyebrow in">お名前の確認</p>
-        <h2 class="h in">お名前が<br>見つかりませんでした</h2>
-        <p class="sub in">入力されたお名前：<span id="typed"></span></p>
-        <div class="col">
-          <button class="btn gold in" type="button" id="retry"><span class="t">もう一度入力する</span></button>
-          <button class="btn line in" type="button" id="toreg"><span class="t">新しく参加登録する</span></button>
-        </div>
       </div>
 
       <!-- STEP 3-B：新規登録 -->
       <form class="view" id="v-register" hidden novalidate>
         <p class="eyebrow in">参加登録</p>
         <h2 class="h small in">ご登録内容を入力してください</h2>
+        <p class="note-reg in" id="reg-note"></p>
         <label class="field in" for="r-name"><span class="cap">お名前<em>必須</em></span>
           <span class="box"><input id="r-name" type="text" lang="ja" maxlength="40" autocomplete="name" placeholder="山田 太郎" enterkeyhint="next"></span></label>
         <label class="field in" for="r-company"><span class="cap">会社名<em>必須</em></span>

@@ -46,7 +46,7 @@
         if (b.action === 'lookup') {
           if (b.reading === 'えらー') return ok({ ok: false, code: 'NETWORK', message: '通信できませんでした。電波の良い場所で、もう一度お試しください。' });
           var hit = people[b.reading] || [];
-          return ok({ ok: true, found: hit.length > 0, candidates: hit.map(function (n, i) { return { name: n, token: b.reading + i, company: i ? '株式会社ベータ' : '株式会社アルファ' }; }) });
+          return ok({ ok: true, found: hit.length > 0, exact: b.reading !== 'たなかけん', candidates: hit.map(function (n, i) { return { name: n, token: b.reading + i, company: i ? '株式会社ベータ' : '株式会社アルファ' }; }) });
         }
         if (b.action === 'checkin') { var st = demoDone[b.token] ? 'already' : 'ok'; demoDone[b.token] = 1; return ok({ ok: true, status: st }); }
         if (b.action === 'register') return ok({ ok: true, status: 'ok' });
@@ -153,9 +153,13 @@
       setBusy(btn, false);
       if (!r.ok) return fail(r, 'e-name');
       candidates = r.candidates || [];
-      if (!r.found) return go('v-notfound', function () { $('typed').textContent = n; });
-      if (candidates.length === 1) return toConfirm(candidates[0]);
+      // 似た候補が無いときは、そのまま手入力（参加登録）へ
+      if (!r.found) return toRegister('お名前が見つかりませんでした。お手数ですが、下の項目を手入力してください。');
+      // 完全一致が1名だけのときは、そのまま「〇〇さんですか？」へ。一致しない（似ている）ときは必ず一覧から選んでもらう
+      if (r.exact && candidates.length === 1) return toConfirm(candidates[0]);
       go('v-choose', function () {
+        if (r.exact) { $('choose-h').innerHTML = 'ご自身のお名前を<br>お選びください'; $('choose-sub').textContent = ''; }
+        else { $('choose-h').innerHTML = 'もしかして、<br>こちらの方ですか？'; $('choose-sub').textContent = '入力されたお名前と完全には一致しませんでした。当てはまる方がいなければ、手入力で登録できます。'; }
         var box = $('list'); box.textContent = '';
         candidates.forEach(function (c) {
           var b = document.createElement('button');
@@ -225,12 +229,10 @@
   });
   $('no').addEventListener('click', function (ev) { if (busy) return; ripple(this, ev); toRegister(); });
   $('none').addEventListener('click', function (ev) { if (busy) return; ripple(this, ev); toRegister(); });
-  $('toreg').addEventListener('click', function (ev) { if (busy) return; ripple(this, ev); toRegister(); });
-  $('retry').addEventListener('click', function (ev) { if (busy) return; ripple(this, ev); go('v-name', function () { input.value = ''; }); });
   $('back').addEventListener('click', function () { if (busy) return; go('v-name'); });
 
   /* ---------- STEP 3-B：新規登録 ---------- */
-  function toRegister() { rid = rand(16); go('v-register', function () { $('e-register').textContent = ''; }); }
+  function toRegister(note) { rid = rand(16); go('v-register', function () { $('e-register').textContent = ''; $('reg-note').textContent = note || ''; }); }
   $('v-register').addEventListener('submit', function (e) {
     e.preventDefault();
     if (busy) return;
